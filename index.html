@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Softedia</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <div class="logo">∞</div>
+      <div class="titles">
+        <div class="subtitle">Alternatives gratuites</div>
+        <h1>Softedia</h1>
+      </div>
+    </div>
+    <div class="searchbar">
+      <nav id="topPages" class="topnav"></nav>
+      <div class="search-wrap">
+        <input id="search" type="text" placeholder="Rechercher dans tout le site… (ex: DRM, montage, indé)">
+        <span class="kbd">⌘K</span>
+      </div>
+      <button id="themeBtn" class="round-btn" title="Basculer thème">🌙</button>
+      <button id="adminBtn" class="btn secondary">Admin</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="aside-title">Catégories</div>
+      <div id="categories"></div>
+      <div class="aside-hint">Astuce : tape un mot-clé pour filtrer instantanément.</div>
+      <div class="aside-hint dim">Prototype local — les données restent dans ce navigateur.</div>
+    </aside>
+
+    <main class="main">
+      <section class="page-head">
+        <h2 id="pageTitle"></h2>
+        <p id="pageDesc" class="muted"></p>
+      </section>
+
+      <div id="searchInfo" class="muted small" style="display:none;"></div>
+
+      <div id="content"></div>
+
+      <section class="about" id="about">
+        <div class="cards">
+          <div class="card">
+            <h4>C’est quoi Softedia ?</h4>
+            <p>Un annuaire design et modulable pour trouver des alternatives <strong>gratuites</strong> à des services payants. Interface claire, recherche instantanée, et panneau d’admin pour tout gérer.</p>
+          </div>
+          <div class="card">
+            <h4>Contribuer</h4>
+            <p>Ce prototype sauvegarde localement. Connecte-toi à l’admin pour ajouter des pages, catégories et titres. Pour la prod : brancher une API et une base (par ex. Postgres) + auth serveur.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="footer">
+    © <span id="year"></span> Softedia — Une bibliothèque complète d’outils gratuits pour vous faciliter la tâche.
+    <div class="links">
+      <a href="#">Mentions</a> · <a href="#">Contact</a>
+    </div>
+  </footer>
+
+  <!-- Admin Modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modalTitle">Administration</h3>
+        <button class="icon-btn" data-close>✕</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <template id="tmpl-resource-card">
+    <div class="resource">
+      <div class="left">
+        <a class="title" target="_blank" rel="noreferrer"></a>
+        <p class="desc"></p>
+        <div class="tags"></div>
+      </div>
+      <div class="right">
+        <div class="date small muted"></div>
+        <div class="admin-actions hidden">
+          <button class="btn ghost edit">Modifier</button>
+          <button class="btn danger del">Supprimer</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>

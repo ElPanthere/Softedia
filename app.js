@@ -25,7 +25,6 @@ function loadDB(){
     cat(pages[3].id, "Dev & Web", "🧪", 1, ""),
     cat(pages[3].id, "Productivité", "⚡", 2, ""),
   ];
-  // Seed resources
   const addRes = (title, href, description, tags, pageId, categoryId) => resources.push({
     id: uid("res"), title, href, description, tags, pageId, categoryId, createdAt: now, updatedAt: now
   });
@@ -55,6 +54,7 @@ const searchInput = document.getElementById("search");
 const searchInfo = document.getElementById("searchInfo");
 const pageTitle = document.getElementById("pageTitle");
 const pageDesc = document.getElementById("pageDesc");
+const pageActions = document.getElementById("pageActions");
 const categoriesEl = document.getElementById("categories");
 const contentEl = document.getElementById("content");
 const topPages = document.getElementById("topPages");
@@ -88,10 +88,17 @@ function renderTopNav(){
   DB.pages.sort((a,b)=>(a.sort??0)-(b.sort??0)).forEach(p=>{
     const btn = document.createElement("button");
     btn.textContent = p.name;
-    btn.className = "topbtn" + (p.id===currentPageId ? " active" : "");
+    btn.className = (p.id===currentPageId ? "active" : "");
     btn.addEventListener("click", ()=>{ currentPageId=p.id; currentCategoryId=null; searchInput.value=""; renderAll(); });
     topPages.appendChild(btn);
   });
+  if (isAdmin){
+    const add = document.createElement("button");
+    add.className = "btn secondary";
+    add.textContent = "+ Page";
+    add.addEventListener("click", ()=> openPageEditor());
+    topPages.appendChild(add);
+  }
 }
 function renderSidebar(){
   categoriesEl.innerHTML = "";
@@ -99,7 +106,7 @@ function renderSidebar(){
   wrap.className = "category-list";
   const allBtn = document.createElement("button");
   allBtn.textContent = "Toutes";
-  allBtn.className = "active";
+  allBtn.className = currentCategoryId===null ? "active" : "";
   allBtn.addEventListener("click", ()=>{ currentCategoryId=null; renderAll(); });
   wrap.appendChild(allBtn);
 
@@ -111,7 +118,6 @@ function renderSidebar(){
     b.addEventListener("click", ()=>{ currentCategoryId=c.id; renderAll(); });
     wrap.appendChild(b);
   });
-  // Admin quick add
   if (isAdmin){
     const add = document.createElement("button");
     add.className = "btn secondary";
@@ -125,6 +131,16 @@ function renderHeaderInfo(){
   const page = DB.pages.find(p=>p.id===currentPageId);
   pageTitle.textContent = page?.name || "";
   pageDesc.textContent = page?.description || "";
+  pageActions.innerHTML = "";
+  if (isAdmin && page){
+    const edit = document.createElement("button");
+    edit.className = "btn ghost"; edit.textContent = "Modifier la page";
+    edit.addEventListener("click", ()=> openPageEditor(page));
+    const del = document.createElement("button");
+    del.className = "btn danger"; del.textContent = "Supprimer la page";
+    del.addEventListener("click", ()=> deletePage(page.id));
+    pageActions.append(edit, del);
+  }
 }
 function renderContent(){
   const q = searchInput.value.trim().toLowerCase();
@@ -138,12 +154,11 @@ function renderContent(){
   searchInfo.style.display = q ? "block" : "none";
   searchInfo.textContent = q ? `Résultats pour « ${q} » — ${list.length} élément(s)` : "";
 
-  // group by category
   const cats = DB.categories.filter(c=>c.pageId===currentPageId).sort((a,b)=>(a.sort??0)-(b.sort??0));
   contentEl.innerHTML = "";
   cats.forEach(c=>{
     const items = list.filter(r=>r.categoryId===c.id);
-    if (!items.length) return;
+    if (!items.length && !isAdmin) return;
     const section = document.createElement("section");
     const head = document.createElement("div");
     head.className = "section-head";
@@ -169,7 +184,6 @@ function renderContent(){
     contentEl.appendChild(section);
   });
 
-  // if no content displayed
   if (!contentEl.children.length){
     const empty = document.createElement("div");
     empty.className="card"; empty.innerHTML = "<div style='text-align:center'>Rien à afficher — ajuste la recherche ou change de catégorie.</div>";
@@ -202,122 +216,20 @@ function renderAll(){
   renderContent();
 }
 
-// ====== Admin ======
+// ====== Admin toggle (inline) ======
 const adminBtn = document.getElementById("adminBtn");
 adminBtn.addEventListener("click", ()=>{
-  if (isAdmin) return openAdminHome();
-  openLogin();
+  if (!isAdmin){
+    const pw = prompt("Mot de passe admin :");
+    if (pw === null) return;
+    if (pw === ADMIN_PASS){ isAdmin = true; adminBtn.textContent = "Admin (on)"; renderAll(); }
+    else alert("Mot de passe incorrect");
+  } else {
+    isAdmin = false; adminBtn.textContent = "Admin"; renderAll();
+  }
 });
 
-function openLogin(){
-  modalTitle.textContent = "Connexion admin";
-  modalBody.innerHTML = `
-    <div class="field">
-      <label>Mot de passe</label>
-      <input type="password" id="pw" class="input" placeholder="••••••••">
-    </div>
-    <div class="table-actions">
-      <button class="btn secondary" data-close>Annuler</button>
-      <button class="btn" id="doLogin">Se connecter</button>
-    </div>
-  `;
-  openModal();
-  const pw = document.getElementById("pw");
-  const go = document.getElementById("doLogin");
-  const submit = ()=>{
-    if (pw.value === ADMIN_PASS){ isAdmin=true; closeModal(); openAdminHome(); }
-    else alert("Mot de passe incorrect");
-  };
-  go.addEventListener("click", submit);
-  pw.addEventListener("keydown", e=> e.key==="Enter" && submit());
-}
-
-function openAdminHome(){
-  modalTitle.textContent = "Administration";
-  modalBody.innerHTML = `
-    <div class="row">
-      <div class="card">
-        <h4>Pages</h4>
-        <table class="table" id="tblPages">
-          <thead><tr><th>Nom</th><th>Slug</th><th>Ordre</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <div class="table-actions"><button class="btn secondary" id="addPage">+ Ajouter une page</button></div>
-      </div>
-      <div class="card">
-        <h4>Catégories</h4>
-        <table class="table" id="tblCats">
-          <thead><tr><th>Nom</th><th>Page</th><th>Icône</th><th>Ordre</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table>
-        <div class="table-actions"><button class="btn secondary" id="addCat">+ Ajouter une catégorie</button></div>
-      </div>
-    </div>
-    <div class="card">
-      <h4>Titres (liens)</h4>
-      <table class="table" id="tblRes">
-        <thead><tr><th>Titre</th><th>Description</th><th>Tags</th><th>Page</th><th>Catégorie</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
-      <div class="table-actions"><button class="btn secondary" id="addRes">+ Ajouter un titre</button></div>
-    </div>
-    <div class="table-actions">
-      <button class="btn" id="logout">Se déconnecter</button>
-    </div>
-  `;
-  openModal();
-  // Fill tables
-  const pagesTbody = modalBody.querySelector("#tblPages tbody");
-  pagesTbody.innerHTML = "";
-  DB.pages.forEach(p=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${p.name}</td><td>/${p.slug}</td><td>${p.sort||0}</td>
-    <td class="table-actions">
-      <button class="btn ghost" data-edit>Modifier</button>
-      <button class="btn danger" data-del>Supprimer</button>
-    </td>`;
-    tr.querySelector("[data-edit]").addEventListener("click", ()=> openPageEditor(p));
-    tr.querySelector("[data-del]").addEventListener("click", ()=> deletePage(p.id));
-    pagesTbody.appendChild(tr);
-  });
-  const catsTbody = modalBody.querySelector("#tblCats tbody");
-  catsTbody.innerHTML="";
-  DB.categories.forEach(c=>{
-    const tr = document.createElement("tr");
-    const pageName = DB.pages.find(p=>p.id===c.pageId)?.name || "?";
-    tr.innerHTML = `<td>${c.name}</td><td>${pageName}</td><td>${c.icon||"•"}</td><td>${c.sort||0}</td>
-    <td class="table-actions">
-      <button class="btn ghost" data-edit>Modifier</button>
-      <button class="btn danger" data-del>Supprimer</button>
-    </td>`;
-    tr.querySelector("[data-edit]").addEventListener("click", ()=> openCategoryEditor(c));
-    tr.querySelector("[data-del]").addEventListener("click", ()=> deleteCategory(c.id));
-    catsTbody.appendChild(tr);
-  });
-  const resTbody = modalBody.querySelector("#tblRes tbody");
-  resTbody.innerHTML="";
-  DB.resources.forEach(r=>{
-    const pageName = DB.pages.find(p=>p.id===r.pageId)?.name || "?";
-    const catName = DB.categories.find(c=>c.id===r.categoryId)?.name || "?";
-    const tags = (r.tags||[]).join(", ");
-    const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${r.title}</td><td>${r.description||""}</td><td>${tags}</td><td>${pageName}</td><td>${catName}</td>
-    <td class="table-actions">
-      <button class="btn ghost" data-edit>Modifier</button>
-      <button class="btn danger" data-del>Supprimer</button>
-    </td>`;
-    tr.querySelector("[data-edit]").addEventListener("click", ()=> openResourceEditor(r));
-    tr.querySelector("[data-del]").addEventListener("click", ()=> deleteResource(r.id));
-    resTbody.appendChild(tr);
-  });
-
-  // actions
-  modalBody.querySelector("#addPage").addEventListener("click", ()=> openPageEditor());
-  modalBody.querySelector("#addCat").addEventListener("click", ()=> openCategoryEditor());
-  modalBody.querySelector("#addRes").addEventListener("click", ()=> openResourceEditor());
-  modalBody.querySelector("#logout").addEventListener("click", ()=>{ isAdmin=false; closeModal(); renderAll(); });
-}
-
+// ====== Editors (modals) ======
 function openPageEditor(p={ id:uid("page"), name:"Nouvelle page", slug:"nouvelle-page", description:"", sort:(DB.pages.length+1) }){
   modalTitle.textContent = p.name ? "Modifier la page" : "Nouvelle page";
   modalBody.innerHTML = `
@@ -343,7 +255,7 @@ function openPageEditor(p={ id:uid("page"), name:"Nouvelle page", slug:"nouvelle
     };
     const exists = DB.pages.some(x=>x.id===p.id);
     DB.pages = exists ? DB.pages.map(x=> x.id===p.id ? next : x) : [...DB.pages, next];
-    saveDB(DB); closeModal(); renderAll(); openAdminHome();
+    saveDB(DB); closeModal(); renderAll();
   });
 }
 
@@ -381,7 +293,7 @@ function openCategoryEditor(c={ id:uid("cat"), pageId: currentPageId, name:"", i
     };
     const exists = DB.categories.some(x=>x.id===c.id);
     DB.categories = exists ? DB.categories.map(x=> x.id===c.id ? next : x) : [...DB.categories, next];
-    saveDB(DB); closeModal(); renderAll(); openAdminHome();
+    saveDB(DB); closeModal(); renderAll();
   });
 }
 
@@ -431,10 +343,11 @@ function openResourceEditor(r={ id:uid("res"), title:"", href:"", description:""
     };
     const exists = DB.resources.some(x=>x.id===r.id);
     DB.resources = exists ? DB.resources.map(x=> x.id===r.id ? next : x) : [...DB.resources, { ...next, createdAt: Date.now() }];
-    saveDB(DB); closeModal(); renderAll(); openAdminHome();
+    saveDB(DB); closeModal(); renderAll();
   });
 }
 
+// ====== Delete helpers ======
 function deletePage(id){
   if (!confirm("Supprimer cette page ? Les catégories et liens associés seront supprimés.")) return;
   const cats = DB.categories.filter(c=>c.pageId===id).map(c=>c.id);
@@ -442,19 +355,19 @@ function deletePage(id){
   DB.categories = DB.categories.filter(c=>c.pageId!==id);
   DB.resources = DB.resources.filter(r=>r.pageId!==id || !cats.includes(r.categoryId));
   if (currentPageId===id) currentPageId = DB.pages[0]?.id || null;
-  saveDB(DB); renderAll(); openAdminHome();
+  saveDB(DB); renderAll();
 }
 function deleteCategory(id){
   if (!confirm("Supprimer cette catégorie et ses liens ?")) return;
   DB.categories = DB.categories.filter(c=>c.id!==id);
   DB.resources = DB.resources.filter(r=>r.categoryId!==id);
   if (currentCategoryId===id) currentCategoryId=null;
-  saveDB(DB); renderAll(); openAdminHome();
+  saveDB(DB); renderAll();
 }
 function deleteResource(id){
   if (!confirm("Supprimer ce titre ?")) return;
   DB.resources = DB.resources.filter(r=>r.id!==id);
-  saveDB(DB); renderAll(); openAdminHome();
+  saveDB(DB); renderAll();
 }
 
 // ====== Modal helpers ======
@@ -466,6 +379,5 @@ modal.querySelectorAll("[data-close]").forEach(el=> el.addEventListener("click",
 // ====== Init ======
 document.getElementById("year").textContent = new Date().getFullYear();
 searchInput.addEventListener("input", renderContent);
-document.getElementById("adminBtn").addEventListener("click", ()=>{}); // already wired but keeps for clarity
 
 renderAll();

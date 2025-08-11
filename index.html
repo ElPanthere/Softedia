@@ -38,6 +38,7 @@
       <section class="page-head">
         <h2 id="pageTitle"></h2>
         <p id="pageDesc" class="muted"></p>
+        <div id="pageActions" class="table-actions"></div>
       </section>
 
       <div id="searchInfo" class="muted small" style="display:none;"></div>
@@ -52,7 +53,7 @@
           </div>
           <div class="card">
             <h4>Contribuer</h4>
-            <p>Ce prototype sauvegarde localement. Connecte-toi à l’admin pour ajouter des pages, catégories et titres. Pour la prod : brancher une API et une base (par ex. Postgres) + auth serveur.</p>
+            <p>Ce prototype sauvegarde localement. Active le mode admin pour ajouter des pages, catégories et titres. Pour la prod : brancher une API et une base (par ex. Postgres) + auth serveur.</p>
           </div>
         </div>
       </section>
@@ -65,18 +66,6 @@
       <a href="#">Mentions</a> · <a href="#">Contact</a>
     </div>
   </footer>
-
-  <!-- Admin Modal -->
-  <div id="modal" class="modal hidden">
-    <div class="modal-backdrop" data-close></div>
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3 id="modalTitle">Administration</h3>
-        <button class="icon-btn" data-close>✕</button>
-      </div>
-      <div id="modalBody" class="modal-body"></div>
-    </div>
-  </div>
 
   <template id="tmpl-resource-card">
     <div class="resource">
@@ -94,6 +83,17 @@
       </div>
     </div>
   </template>
+
+  <div id="modal" class="modal hidden">
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3 id="modalTitle">Édition</h3>
+        <button class="icon-btn" data-close>✕</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
 
   <script src="app.js"></script>
 </body>

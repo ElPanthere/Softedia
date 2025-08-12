@@ -9,7 +9,7 @@
 <body>
   <header class="header">
     <div class="brand">
-      <div class="logo">∞</div>
+      <div id="logo" class="logo" title="Softedia">∞</div>
       <div class="titles">
         <div class="subtitle">Alternatives gratuites</div>
         <h1>Softedia</h1>
@@ -22,7 +22,7 @@
         <span class="kbd">⌘K</span>
       </div>
       <button id="themeBtn" class="round-btn" title="Basculer thème">🌙</button>
-      <button id="adminBtn" class="btn secondary">Admin</button>
+      <!-- Admin button removed intentionally -->
     </div>
   </header>
 
@@ -53,7 +53,7 @@
           </div>
           <div class="card">
             <h4>Contribuer</h4>
-            <p>Ce prototype sauvegarde localement. Active le mode admin pour ajouter des pages, catégories et titres. Pour la prod : brancher une API et une base (par ex. Postgres) + auth serveur.</p>
+            <p>Ce prototype sauvegarde localement. Active le mode admin (accès réservé) pour ajouter des pages, catégories et titres. Pour la prod : brancher une API et une base (par ex. Postgres) + auth serveur.</p>
           </div>
         </div>
       </section>
@@ -66,6 +66,9 @@
       <a href="#">Mentions</a> · <a href="#">Contact</a>
     </div>
   </footer>
+
+  <!-- Hidden input for XLSX import -->
+  <input id="xlsxInput" type="file" accept=".xlsx" style="display:none" />
 
   <template id="tmpl-resource-card">
     <div class="resource fade">
@@ -96,6 +99,8 @@
     </div>
   </div>
 
+  <!-- SheetJS for XLSX import/export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

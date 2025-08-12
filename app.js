@@ -62,6 +62,7 @@ const topPages = document.getElementById("topPages");
 const modal = document.getElementById("modal");
 const modalBody = document.getElementById("modalBody");
 const modalTitle = document.getElementById("modalTitle");
+const xlsxInput = document.getElementById("xlsxInput");
 
 // ====== Theme ======
 const themeBtn = document.getElementById("themeBtn");
@@ -78,10 +79,69 @@ function setTheme(t){
 })();
 themeBtn.addEventListener("click", ()=> setTheme(document.documentElement.classList.contains("dark") ? "light" : "dark"));
 
-// ====== Keyboard shortcut ======
+// ====== Keyboard shortcuts ======
 window.addEventListener("keydown", (e)=>{
-  if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); searchInput.focus(); }
+  if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); searchInput.focus(); return; }
+  // Secret admin: Ctrl+Alt+S
+  if ((e.ctrlKey||e.metaKey) && e.altKey && e.key.toLowerCase()==="s"){
+    e.preventDefault();
+    toggleAdminViaPrompt();
+  }
 });
+
+// Secret admin via logo multi-click (5 clicks in 3s)
+(function setupLogoSecret(){
+  const logo = document.getElementById("logo");
+  let clicks = 0;
+  let timer = null;
+  logo.addEventListener("click", ()=>{
+    clicks++;
+    if (clicks===1){
+      timer = setTimeout(()=>{ clicks=0; }, 3000);
+    }
+    if (clicks>=5){
+      clearTimeout(timer); clicks=0;
+      toggleAdminViaPrompt();
+    }
+  });
+})();
+
+function toggleAdminViaPrompt(){
+  if (!isAdmin){
+    const pw = prompt("Accès réservé — mot de passe admin :");
+    if (pw === null) return;
+    if (pw === ADMIN_PASS){ isAdmin = true; notify('Mode admin activé'); renderAll(); }
+    else alert("Mot de passe incorrect");
+  } else {
+    isAdmin = false; notify('Mode admin désactivé'); renderAll();
+  }
+}
+
+// Small toast (non-intrusive)
+function notify(msg){
+  const t = document.createElement("div");
+  t.textContent = msg;
+  t.style.position = "fixed";
+  t.style.bottom = "16px";
+  t.style.left = "50%";
+  t.style.transform = "translateX(-50%)";
+  t.style.padding = "10px 14px";
+  t.style.borderRadius = "12px";
+  t.style.background = "var(--pill)";
+  t.style.color = "var(--on-pill)";
+  t.style.border = "1px solid var(--border)";
+  t.style.zIndex = 1000;
+  t.style.opacity = "0";
+  t.style.transition = "opacity .2s ease, transform .2s ease";
+  document.body.appendChild(t);
+  requestAnimationFrame(()=>{
+    t.style.opacity = "1"; t.style.transform = "translateX(-50%) translateY(-4px)";
+    setTimeout(()=>{
+      t.style.opacity = "0"; t.style.transform = "translateX(-50%)";
+      setTimeout(()=> t.remove(), 200);
+    }, 1200);
+  });
+}
 
 // ====== Helper: Confirm dialog (modal) ======
 function confirmDialog({title="Confirmer", message="Êtes-vous sûr ?", confirmText="Supprimer", cancelText="Annuler", danger=true}){
@@ -98,6 +158,88 @@ function confirmDialog({title="Confirmer", message="Êtes-vous sûr ?", confirmT
     modalBody.querySelector("#confirmBtn").addEventListener("click", ()=>{ closeModal(); resolve(true); }, {once:true});
     modalBody.querySelectorAll("[data-close]").forEach(el=> el.addEventListener("click", ()=> resolve(false), {once:true}));
   });
+}
+
+// ====== XLSX Export / Import ======
+function exportXLSX(){
+  if (typeof XLSX === 'undefined'){ alert("Bibliothèque XLSX non chargée."); return; }
+  // Build sheets
+  const pages = DB.pages.map(p=>({ id:p.id, name:p.name, slug:p.slug, description:p.description||"", sort:p.sort||0 }));
+  const categories = DB.categories.map(c=>({ id:c.id, name:c.name, pageId:c.pageId, icon:c.icon||"", sort:c.sort||0, description:c.description||"" }));
+  const resources = DB.resources.map(r=>({ id:r.id, title:r.title, href:r.href, description:r.description||"", tags:(r.tags||[]).join(", "), pageId:r.pageId, categoryId:r.categoryId, createdAt:r.createdAt, updatedAt:r.updatedAt }));
+  const subcategories = []; // Placeholder: structure future
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(pages), "Pages");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(categories), "Categories");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resources), "Resources");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(subcategories), "Subcategories"); // for future use
+  XLSX.writeFile(wb, "softedia_export.xlsx");
+}
+
+function importXLSX(file){
+  if (typeof XLSX === 'undefined'){ alert("Bibliothèque XLSX non chargée."); return; }
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, {type:'array'});
+    const get = (name)=> wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:""}) : [];
+
+    const pages = get("Pages");
+    const categories = get("Categories");
+    const resources = get("Resources");
+    const subcats = get("Subcategories"); // not used yet
+
+    // Basic validation
+    if (!pages.length && !categories.length && !resources.length){
+      alert("Le fichier ne contient pas de données valides.");
+      return;
+    }
+
+    // Map arrays -> DB structure (keep IDs if provided; generate missing)
+    const pageIdMap = {};
+    const newPages = pages.map(p=>{
+      const id = (p.id && String(p.id).trim()) || uid("page");
+      pageIdMap[p.id||id] = id;
+      return { id, name: String(p.name||"").trim()||"Page", slug: String(p.slug||"").trim()||"page", description: String(p.description||""), sort: Number(p.sort||0) };
+    });
+
+    const catIdMap = {};
+    const newCats = categories.map(c=>{
+      const id = (c.id && String(c.id).trim()) || uid("cat");
+      const rawPid = String(c.pageId||"").trim();
+      const pageId = pageIdMap[rawPid] || newPages.find(p=>p.id===rawPid)?.id || DB.pages.find(p=>p.id===rawPid)?.id || (newPages[0]?.id || DB.pages[0]?.id);
+      catIdMap[c.id||id] = id;
+      return { id, name: String(c.name||"").trim()||"Catégorie", pageId, icon: String(c.icon||"•"), sort: Number(c.sort||0), description: String(c.description||"") };
+    });
+
+    const newRes = resources.map(r=>{
+      const id = (r.id && String(r.id).trim()) || uid("res");
+      // Resolve page/category
+      const rawPid = String(r.pageId||"").trim();
+      const pageId = pageIdMap[rawPid] || newPages.find(p=>p.id===rawPid)?.id || DB.pages.find(p=>p.id===rawPid)?.id || (newPages[0]?.id || DB.pages[0]?.id);
+      const rawCid = String(r.categoryId||"").trim();
+      const categoryId = catIdMap[rawCid] || newCats.find(c=>c.id===rawCid)?.id || DB.categories.find(c=>c.id===rawCid)?.id || (newCats.find(c=>c.pageId===pageId)?.id || DB.categories.find(c=>c.pageId===pageId)?.id);
+      const tags = String(r.tags||"").split(",").map(s=>s.trim()).filter(Boolean);
+      const createdAt = Number(r.createdAt||Date.now());
+      const updatedAt = Number(r.updatedAt||Date.now());
+      return { id, title: String(r.title||"").trim()||"Titre", href: String(r.href||"").trim()||"#", description: String(r.description||""), tags, pageId, categoryId, createdAt, updatedAt };
+    });
+
+    // Merge strategy: replace all
+    DB = { pages: newPages, categories: newCats, resources: newRes };
+    saveDB(DB);
+    currentPageId = DB.pages.sort((a,b)=>(a.sort??0)-(b.sort??0))[0]?.id;
+    currentCategoryId = null;
+    notify("Import .xlsx réussi");
+    renderAll();
+
+    if (subcats.length){
+      console.warn("Subcategories sheet present but not used yet.");
+      notify("Note: les sous-catégories ne sont pas encore supportées.");
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 // ====== Render ======
@@ -181,7 +323,19 @@ function renderHeaderInfo(){
       if (!ok) return;
       deletePage(page.id);
     });
-    pageActions.append(edit, del);
+
+    // Global export/import (visible in admin)
+    const exportBtn = document.createElement("button");
+    exportBtn.className = "btn secondary";
+    exportBtn.textContent = "Exporter .xlsx";
+    exportBtn.addEventListener("click", exportXLSX);
+
+    const importBtn = document.createElement("button");
+    importBtn.className = "btn secondary";
+    importBtn.textContent = "Importer .xlsx";
+    importBtn.addEventListener("click", ()=> xlsxInput.click());
+
+    pageActions.append(edit, del, exportBtn, importBtn);
   }
 }
 function renderContent(){
@@ -282,19 +436,6 @@ function swapIn(el){
   void el.offsetWidth; // reflow
   el.classList.add("in");
 }
-
-// ====== Admin toggle (inline) ======
-const adminBtn = document.getElementById("adminBtn");
-adminBtn.addEventListener("click", ()=>{
-  if (!isAdmin){
-    const pw = prompt("Mot de passe admin :");
-    if (pw === null) return;
-    if (pw === ADMIN_PASS){ isAdmin = true; adminBtn.textContent = "Admin (on)"; renderAll(); }
-    else alert("Mot de passe incorrect");
-  } else {
-    isAdmin = false; adminBtn.textContent = "Admin"; renderAll();
-  }
-});
 
 // ====== Editors (modals) ======
 function openPageEditor(p={ id:uid("page"), name:"Nouvelle page", slug:"nouvelle-page", description:"", sort:(DB.pages.length+1) }){
@@ -439,6 +580,13 @@ function openModal(){ modal.classList.remove("hidden"); }
 function closeModal(){ modal.classList.add("hidden"); }
 modal.addEventListener("click", (e)=>{ if (e.target.dataset.close!==undefined) closeModal(); });
 modal.querySelectorAll("[data-close]").forEach(el=> el.addEventListener("click", closeModal));
+
+// XLSX input change handler
+xlsxInput.addEventListener("change", (e)=>{
+  const file = e.target.files?.[0];
+  if (file) importXLSX(file);
+  xlsxInput.value = ""; // reset
+});
 
 // ====== Init ======
 document.getElementById("year").textContent = new Date().getFullYear();

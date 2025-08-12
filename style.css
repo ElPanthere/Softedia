@@ -27,7 +27,7 @@ body{
   color: var(--fg);
 }
 
-/* Utility */
+/* Utilities */
 .hidden{display:none !important}
 
 /* ========== Header ==========\ */
@@ -70,6 +70,13 @@ h1{margin:0; font-size:20px; line-height:1.1}
 .btn.danger{background:#e5484d;color:white}
 .icon-btn{border:0;background:transparent; cursor:pointer; font-size:16px; color:var(--fg)}
 
+/* Hover/active micro-interactions */
+@media (prefers-reduced-motion: no-preference){
+  .btn{transition: transform .12s ease, box-shadow .2s ease, background .2s ease, color .2s ease, border-color .2s ease}
+  .btn:active{transform: translateY(1px)}
+  .topnav button{transition: background .2s ease, color .2s ease}
+}
+
 /* ========== Layout ==========\ */
 .layout{display:grid; grid-template-columns: 260px 1fr; gap: 20px; max-width:1200px; margin: 0 auto; padding: 16px}
 .sidebar{
@@ -94,6 +101,17 @@ h1{margin:0; font-size:20px; line-height:1.1}
 
 .cards{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:12px}
 .card{border:1px solid var(--border); background:var(--card); border-radius:18px; padding:16px}
+
+/* Section + content transitions */
+@media (prefers-reduced-motion: no-preference){
+  .swap{opacity:0; transform: translateY(6px); transition: opacity .22s ease, transform .22s ease}
+  .swap.in{opacity:1; transform: none}
+  .fade{opacity:0; transform: translateY(6px); animation: fadeUp .28s ease both}
+  .fade-slow{opacity:0; transform: translateY(8px); animation: fadeUp .36s ease both}
+  @keyframes fadeUp{to{opacity:1; transform:none}}
+  .modal-card{animation: pop .18s ease both}
+  @keyframes pop{from{opacity:.0; transform: scale(.98)} to{opacity:1; transform: none}}
+}
 
 .section-head{display:flex; align-items:center; justify-content:space-between; margin: 18px 0 10px 0}
 .badge{border:1px solid var(--border); padding:4px 10px; border-radius:999px; color:var(--muted); font-size:12px}
@@ -134,6 +152,7 @@ h1{margin:0; font-size:20px; line-height:1.1}
 .table th, .table td{border-bottom:1px solid var(--border); padding:8px 6px; text-align:left}
 .table-actions{display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-top:6px}
 hr{border:0; height:1px; background:linear-gradient(90deg, var(--border), transparent, var(--border))}
+
 /* Responsive */
 @media (max-width: 860px){
   .layout{grid-template-columns: 1fr}

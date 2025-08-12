@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Softedia</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <header class="header">
@@ -18,7 +18,7 @@
     <div class="searchbar">
       <nav id="topPages" class="topnav"></nav>
       <div class="search-wrap">
-        <input id="search" type="text" placeholder="Rechercher dans tout le site… (ex: DRM, montage, indé)">
+        <input id="search" type="text" placeholder="Rechercher dans tout le site… (ex: DRM, montage, indé)" />
         <span class="kbd">⌘K</span>
       </div>
       <button id="themeBtn" class="round-btn" title="Basculer thème">🌙</button>
@@ -43,7 +43,7 @@
 
       <div id="searchInfo" class="muted small" style="display:none;"></div>
 
-      <div id="content"></div>
+      <div id="content" class="swap"></div>
 
       <section class="about" id="about">
         <div class="cards">
@@ -68,7 +68,7 @@
   </footer>
 
   <template id="tmpl-resource-card">
-    <div class="resource">
+    <div class="resource fade">
       <div class="left">
         <a class="title" target="_blank" rel="noreferrer"></a>
         <p class="desc"></p>
@@ -84,6 +84,7 @@
     </div>
   </template>
 
+  <!-- Modale générique -->
   <div id="modal" class="modal hidden">
     <div class="modal-backdrop" data-close></div>
     <div class="modal-card">

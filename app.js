@@ -82,6 +82,23 @@ window.addEventListener("keydown", (e)=>{
   if ((e.metaKey||e.ctrlKey) && e.key.toLowerCase()==="k"){ e.preventDefault(); searchInput.focus(); }
 });
 
+// ====== Helper: Confirm dialog (modal) ======
+function confirmDialog({title="Confirmer", message="Êtes-vous sûr ?", confirmText="Supprimer", cancelText="Annuler", danger=true}){
+  return new Promise((resolve)=>{
+    modalTitle.textContent = title;
+    modalBody.innerHTML = `
+      <p class="muted" style="margin-bottom:8px">${message}</p>
+      <div class="table-actions">
+        <button class="btn secondary" data-close>${cancelText}</button>
+        <button id="confirmBtn" class="btn ${danger?'danger':''}">${confirmText}</button>
+      </div>
+    `;
+    openModal();
+    modalBody.querySelector("#confirmBtn").addEventListener("click", ()=>{ closeModal(); resolve(true); }, {once:true});
+    modalBody.querySelectorAll("[data-close]").forEach(el=> el.addEventListener("click", ()=> resolve(false), {once:true}));
+  });
+}
+
 // ====== Render ======
 function renderTopNav(){
   topPages.innerHTML = "";
@@ -89,7 +106,7 @@ function renderTopNav(){
     const btn = document.createElement("button");
     btn.textContent = p.name;
     btn.className = (p.id===currentPageId ? "active" : "");
-    btn.addEventListener("click", ()=>{ currentPageId=p.id; currentCategoryId=null; searchInput.value=""; renderAll(); });
+    btn.addEventListener("click", ()=>{ currentPageId=p.id; currentCategoryId=null; searchInput.value=""; swapIn(contentEl); renderAll(); });
     topPages.appendChild(btn);
   });
   if (isAdmin){
@@ -103,11 +120,11 @@ function renderTopNav(){
 function renderSidebar(){
   categoriesEl.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.className = "category-list";
+  wrap.className = "category-list fade-slow";
   const allBtn = document.createElement("button");
   allBtn.textContent = "Toutes";
   allBtn.className = currentCategoryId===null ? "active" : "";
-  allBtn.addEventListener("click", ()=>{ currentCategoryId=null; renderAll(); });
+  allBtn.addEventListener("click", ()=>{ currentCategoryId=null; swapIn(contentEl); renderAll(); });
   wrap.appendChild(allBtn);
 
   const cats = DB.categories.filter(c=>c.pageId===currentPageId).sort((a,b)=>(a.sort??0)-(b.sort??0));
@@ -115,7 +132,7 @@ function renderSidebar(){
     const b = document.createElement("button");
     b.textContent = `${c.icon||"•"}  ${c.name}`;
     b.className = (currentCategoryId===c.id) ? "active" : "";
-    b.addEventListener("click", ()=>{ currentCategoryId=c.id; renderAll(); });
+    b.addEventListener("click", ()=>{ currentCategoryId=c.id; swapIn(contentEl); renderAll(); });
     wrap.appendChild(b);
   });
   if (isAdmin){
@@ -138,7 +155,14 @@ function renderHeaderInfo(){
     edit.addEventListener("click", ()=> openPageEditor(page));
     const del = document.createElement("button");
     del.className = "btn danger"; del.textContent = "Supprimer la page";
-    del.addEventListener("click", ()=> deletePage(page.id));
+    del.addEventListener("click", async ()=> {
+      const ok = await confirmDialog({
+        title: "Supprimer la page",
+        message: `La page « ${page.name} » et ses éléments associés seront supprimés. Continuer ?`
+      });
+      if (!ok) return;
+      deletePage(page.id);
+    });
     pageActions.append(edit, del);
   }
 }
@@ -160,6 +184,7 @@ function renderContent(){
     const items = list.filter(r=>r.categoryId===c.id);
     if (!items.length && !isAdmin) return;
     const section = document.createElement("section");
+    section.className = "fade";
     const head = document.createElement("div");
     head.className = "section-head";
     head.innerHTML = `<h3>${c.icon||"•"} ${c.name}</h3> <span class="badge">${items.length} lien(s)</span>`;
@@ -171,7 +196,14 @@ function renderContent(){
       const editC = document.createElement("button"); editC.className="btn ghost"; editC.textContent="Modifier catégorie";
       editC.addEventListener("click", ()=> openCategoryEditor(c));
       const delC = document.createElement("button"); delC.className="btn danger"; delC.textContent="Supprimer catégorie";
-      delC.addEventListener("click", ()=> deleteCategory(c.id));
+      delC.addEventListener("click", async ()=> {
+        const ok = await confirmDialog({
+          title: "Supprimer la catégorie",
+          message: `La catégorie « ${c.name} » et ses liens seront supprimés. Continuer ?`
+        });
+        if (!ok) return;
+        deleteCategory(c.id);
+      });
       const addR = document.createElement("button"); addR.className="btn secondary"; addR.textContent="+ Ajouter un titre";
       addR.addEventListener("click", ()=> openResourceEditor({ pageId: currentPageId, categoryId: c.id }));
       adminRow.append(editC, addR, delC);
@@ -186,9 +218,12 @@ function renderContent(){
 
   if (!contentEl.children.length){
     const empty = document.createElement("div");
-    empty.className="card"; empty.innerHTML = "<div style='text-align:center'>Rien à afficher — ajuste la recherche ou change de catégorie.</div>";
+    empty.className="card fade"; empty.innerHTML = "<div style='text-align:center'>Rien à afficher — ajuste la recherche ou change de catégorie.</div>";
     contentEl.appendChild(empty);
   }
+
+  // trigger content swap animation
+  swapIn(contentEl);
 }
 function resourceCard(r){
   const tpl = document.getElementById("tmpl-resource-card");
@@ -205,7 +240,14 @@ function resourceCard(r){
     const admin = node.querySelector(".admin-actions");
     admin.classList.remove("hidden");
     admin.querySelector(".edit").addEventListener("click", ()=> openResourceEditor(r));
-    admin.querySelector(".del").addEventListener("click", ()=> deleteResource(r.id));
+    admin.querySelector(".del").addEventListener("click", async ()=> {
+      const ok = await confirmDialog({
+        title: "Supprimer le titre",
+        message: `Le lien « ${r.title} » sera supprimé. Continuer ?`
+      });
+      if (!ok) return;
+      deleteResource(r.id);
+    });
   }
   return node;
 }
@@ -214,6 +256,13 @@ function renderAll(){
   renderSidebar();
   renderHeaderInfo();
   renderContent();
+}
+
+// small helper to fade/swap containers
+function swapIn(el){
+  el.classList.remove("in");
+  void el.offsetWidth; // reflow
+  el.classList.add("in");
 }
 
 // ====== Admin toggle (inline) ======
@@ -233,7 +282,7 @@ adminBtn.addEventListener("click", ()=>{
 function openPageEditor(p={ id:uid("page"), name:"Nouvelle page", slug:"nouvelle-page", description:"", sort:(DB.pages.length+1) }){
   modalTitle.textContent = p.name ? "Modifier la page" : "Nouvelle page";
   modalBody.innerHTML = `
-    <div class="field"><label>Nom</label><input id="p_name" class="input" value="${p.name||""}"></div>
+    <div class="field"><label>Nom</</label><input id="p_name" class="input" value="${p.name||""}"></div>
     <div class="row">
       <div class="field"><label>Slug</label><input id="p_slug" class="input" value="${p.slug||""}"></div>
       <div class="field"><label>Ordre</label><input id="p_sort" class="input" type="number" value="${p.sort||0}"></div>
@@ -347,9 +396,8 @@ function openResourceEditor(r={ id:uid("res"), title:"", href:"", description:""
   });
 }
 
-// ====== Delete helpers ======
+// ====== Delete helpers (called after confirm) ======
 function deletePage(id){
-  if (!confirm("Supprimer cette page ? Les catégories et liens associés seront supprimés.")) return;
   const cats = DB.categories.filter(c=>c.pageId===id).map(c=>c.id);
   DB.pages = DB.pages.filter(p=>p.id!==id);
   DB.categories = DB.categories.filter(c=>c.pageId!==id);
@@ -358,14 +406,12 @@ function deletePage(id){
   saveDB(DB); renderAll();
 }
 function deleteCategory(id){
-  if (!confirm("Supprimer cette catégorie et ses liens ?")) return;
   DB.categories = DB.categories.filter(c=>c.id!==id);
   DB.resources = DB.resources.filter(r=>r.categoryId!==id);
   if (currentCategoryId===id) currentCategoryId=null;
   saveDB(DB); renderAll();
 }
 function deleteResource(id){
-  if (!confirm("Supprimer ce titre ?")) return;
   DB.resources = DB.resources.filter(r=>r.id!==id);
   saveDB(DB); renderAll();
 }

@@ -46,6 +46,7 @@ let DB = loadDB();
 let currentPageId = DB.pages.sort((a,b)=>(a.sort??0)-(b.sort??0))[0]?.id;
 let currentCategoryId = null;
 let isAdmin = false;
+let animateSidebar = true; // control sidebar animation
 
 // ====== DOM refs ======
 const yearSpan = document.getElementById("year");
@@ -106,7 +107,14 @@ function renderTopNav(){
     const btn = document.createElement("button");
     btn.textContent = p.name;
     btn.className = (p.id===currentPageId ? "active" : "");
-    btn.addEventListener("click", ()=>{ currentPageId=p.id; currentCategoryId=null; searchInput.value=""; swapIn(contentEl); renderAll(); });
+    btn.addEventListener("click", ()=>{
+      currentPageId=p.id;
+      currentCategoryId=null;
+      animateSidebar = true; // animate on page change
+      searchInput.value="";
+      swapIn(contentEl);
+      renderAll();
+    });
     topPages.appendChild(btn);
   });
   if (isAdmin){
@@ -120,11 +128,16 @@ function renderTopNav(){
 function renderSidebar(){
   categoriesEl.innerHTML = "";
   const wrap = document.createElement("div");
-  wrap.className = "category-list fade-slow";
+  wrap.className = "category-list" + (animateSidebar ? " fade-slow" : "");
   const allBtn = document.createElement("button");
   allBtn.textContent = "Toutes";
   allBtn.className = currentCategoryId===null ? "active" : "";
-  allBtn.addEventListener("click", ()=>{ currentCategoryId=null; swapIn(contentEl); renderAll(); });
+  allBtn.addEventListener("click", ()=>{
+    currentCategoryId=null;
+    animateSidebar = false; // don't animate on category switch
+    swapIn(contentEl);
+    renderAll();
+  });
   wrap.appendChild(allBtn);
 
   const cats = DB.categories.filter(c=>c.pageId===currentPageId).sort((a,b)=>(a.sort??0)-(b.sort??0));
@@ -132,7 +145,12 @@ function renderSidebar(){
     const b = document.createElement("button");
     b.textContent = `${c.icon||"•"}  ${c.name}`;
     b.className = (currentCategoryId===c.id) ? "active" : "";
-    b.addEventListener("click", ()=>{ currentCategoryId=c.id; swapIn(contentEl); renderAll(); });
+    b.addEventListener("click", ()=>{
+      currentCategoryId=c.id;
+      animateSidebar = false; // don't animate on category switch
+      swapIn(contentEl);
+      renderAll();
+    });
     wrap.appendChild(b);
   });
   if (isAdmin){
@@ -282,7 +300,7 @@ adminBtn.addEventListener("click", ()=>{
 function openPageEditor(p={ id:uid("page"), name:"Nouvelle page", slug:"nouvelle-page", description:"", sort:(DB.pages.length+1) }){
   modalTitle.textContent = p.name ? "Modifier la page" : "Nouvelle page";
   modalBody.innerHTML = `
-    <div class="field"><label>Nom</</label><input id="p_name" class="input" value="${p.name||""}"></div>
+    <div class="field"><label>Nom</label><input id="p_name" class="input" value="${p.name||""}"></div>
     <div class="row">
       <div class="field"><label>Slug</label><input id="p_slug" class="input" value="${p.slug||""}"></div>
       <div class="field"><label>Ordre</label><input id="p_sort" class="input" type="number" value="${p.sort||0}"></div>

@@ -1,30 +1,39 @@
-/* ========== Base ==========\ */
+/* ========== Design Tokens ==========\ */
 :root{
   --bg: #ffffff;
-  --fg: #0a0a0a;
-  --muted: #666;
-  --soft: #f6f6f7;
-  --border: #e6e6e7;
-  --card: #fff;
-  --accent: #0a0a0a;
+  --fg: #0b0f17;
+  --muted: #6b7380;
+  --soft: #f6f7f9;
+  --border: #e7e9ee;
+  --card: #ffffff;
+  --accent: #0b0f17;
+  --pill: #0b0f17;
+  --link: #1d4ed8;         /* Light: blue-700 */
+  --link-hover: #1e40af;   /* Light: blue-800 */
 }
 :root.dark{
-  --bg: #0b0b0c;
-  --fg: #f2f2f3;
-  --muted: #a1a1a8;
-  --soft: #121214;
-  --border: #252528;
-  --card: #0f0f11;
-  --accent: #f2f2f3;
+  /* Dark mode poli : contrastes doux, bleus désaturés, bordures subtiles */
+  --bg: #0d1117;           /* GitHub dark base */
+  --fg: #e6edf3;
+  --muted: #9aa4b2;
+  --soft: #0f141b;
+  --border: #1f2630;
+  --card: #11161c;
+  --accent: #e6edf3;
+  --pill: #1b2430;         /* fond pour boutons actifs/hover */
+  --link: #8fb6ff;         /* Bleu doux, non agressif */
+  --link-hover: #a7c6ff;   /* Hover légèrement plus clair */
 }
 
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
   margin:0;
-  font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+  font: 14px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
   background: var(--bg);
   color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Utilities */
@@ -37,7 +46,7 @@ body{
   gap: 12px;
   padding: 12px 16px;
   backdrop-filter: blur(6px);
-  background: color-mix(in oklab, var(--bg) 74%, transparent);
+  background: color-mix(in oklab, var(--bg) 84%, transparent);
   border-bottom: 1px solid var(--border);
 }
 .brand{display:flex; align-items:center; gap:12px}
@@ -49,9 +58,9 @@ body{
 h1{margin:0; font-size:20px; line-height:1.1}
 
 .searchbar{display:flex; align-items:center; gap:10px; flex:1; justify-content:flex-end}
-.topnav{display:flex; gap:6px; border:1px solid var(--border); padding:4px; border-radius:14px}
+.topnav{display:flex; gap:6px; border:1px solid var(--border); padding:4px; border-radius:14px; background: var(--card)}
 .topnav button{border:0; background:transparent; padding:6px 10px; border-radius:10px; cursor:pointer; color:var(--fg)}
-.topnav button.active{background: var(--accent); color: var(--bg)}
+.topnav button.active{background: var(--pill); color: var(--fg)}
 
 .search-wrap{position:relative; flex:1; max-width:540px}
 .search-wrap input{
@@ -61,7 +70,7 @@ h1{margin:0; font-size:20px; line-height:1.1}
 }
 .kbd{position:absolute; right:10px; top:50%; translate:0 -50%; color:#9a9aa2; font-size:12px}
 .round-btn{
-  width:40px;height:40px;border-radius:999px; background:transparent; border:1px solid var(--border);
+  width:40px;height:40px;border-radius:999px; background:var(--card); border:1px solid var(--border);
   cursor:pointer; font-size:18px; display:grid; place-items:center; color:var(--fg);
 }
 .btn{border:0;border-radius:12px;padding:8px 12px; cursor:pointer; font-weight:500}
@@ -92,7 +101,7 @@ h1{margin:0; font-size:20px; line-height:1.1}
   text-align:left; padding:8px 10px; border-radius:10px; border:0; background:transparent; cursor:pointer; color:var(--fg)
 }
 .category-list button:hover{background: var(--soft)}
-.category-list button.active{background: var(--accent); color: var(--bg)}
+.category-list button.active{background: var(--pill); color: var(--fg)}
 
 .main{padding-bottom: 48px;}
 .page-head h2{margin:.2rem 0 0 0; font-size:24px}
@@ -100,7 +109,30 @@ h1{margin:0; font-size:20px; line-height:1.1}
 .small{font-size:12px}
 
 .cards{display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-top:12px}
-.card{border:1px solid var(--border); background:var(--card); border-radius:18px; padding:16px}
+.card{
+  border:1px solid var(--border); background: var(--card);
+  border-radius:18px; padding:16px;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--border) 50%, transparent);
+}
+
+/* Links / titles (softer in dark) */
+.resource .title{
+  color: var(--link);
+  text-decoration: underline;
+  text-underline-offset:4px;
+  text-decoration-color: color-mix(in oklab, var(--link) 35%, transparent);
+}
+.resource .title:hover{
+  color: var(--link-hover);
+  text-decoration-color: var(--link-hover);
+}
+.resource{
+  display:flex; justify-content:space-between; gap:16px;
+  border:1px solid var(--border); background: var(--card); border-radius:18px; padding:16px; margin-bottom:10px
+}
+.resource .desc{margin:.4rem 0 0 0; color:var(--muted)}
+.tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
+.tag{border:1px solid var(--border); padding:4px 10px; border-radius:999px; color:var(--muted); font-size:12px}
 
 /* Section + content transitions */
 @media (prefers-reduced-motion: no-preference){
@@ -116,18 +148,9 @@ h1{margin:0; font-size:20px; line-height:1.1}
 .section-head{display:flex; align-items:center; justify-content:space-between; margin: 18px 0 10px 0}
 .badge{border:1px solid var(--border); padding:4px 10px; border-radius:999px; color:var(--muted); font-size:12px}
 
-.resource{
-  display:flex; justify-content:space-between; gap:16px;
-  border:1px solid var(--border); background: var(--card); border-radius:18px; padding:16px; margin-bottom:10px
-}
-.resource .title{font-weight:600; text-decoration: underline; text-underline-offset:4px; text-decoration-color:#d7d7db}
-.resource .desc{margin:.4rem 0 0 0; color:var(--muted)}
-.tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px}
-.tag{border:1px solid var(--border); padding:4px 10px; border-radius:999px; color:var(--muted); font-size:12px}
-
 /* ========== Footer ==========\ */
 .footer{
-  border-top:1px solid var(--border); padding:16px; text-align:center; background: color-mix(in oklab, var(--bg) 80%, transparent);
+  border-top:1px solid var(--border); padding:16px; text-align:center; background: color-mix(in oklab, var(--bg) 86%, transparent);
   display:grid; place-items:center; gap:6px; color: var(--muted);
 }
 .footer .links a{color:inherit; text-decoration:none}
@@ -145,7 +168,7 @@ h1{margin:0; font-size:20px; line-height:1.1}
 .field{display:grid; gap:6px}
 .field label{font-size:12px; color:var(--muted)}
 .input, .select, .textarea{
-  width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:var(--bg); color:var(--fg);
+  width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background: var(--bg); color: var(--fg);
 }
 .row{display:grid; grid-template-columns: 1fr 1fr; gap:10px}
 .table{width:100%; border-collapse: collapse}

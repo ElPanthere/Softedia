@@ -1,6 +1,5 @@
 /* ========== Design Tokens ==========\ */
 :root{
-  --on-pill: #ffffff;        /* light text on dark pill (light mode) */
   --bg: #ffffff;
   --fg: #0b0f17;
   --muted: #6b7380;
@@ -9,22 +8,22 @@
   --card: #ffffff;
   --accent: #0b0f17;
   --pill: #0b0f17;
-  --link: #1d4ed8;         /* Light: blue-700 */
-  --link-hover: #1e40af;   /* Light: blue-800 */
+  --on-pill: #ffffff;     /* text color on pill in light mode */
+  --link: #1d4ed8;
+  --link-hover: #1e40af;
 }
 :root.dark{
-  --on-pill: #e6edf3;      /* light text on dark pill (dark mode) */
-  /* Dark mode poli : contrastes doux, bleus désaturés, bordures subtiles */
-  --bg: #0d1117;           /* GitHub dark base */
+  --bg: #0d1117;
   --fg: #e6edf3;
   --muted: #9aa4b2;
   --soft: #0f141b;
   --border: #1f2630;
   --card: #11161c;
   --accent: #e6edf3;
-  --pill: #1b2430;         /* fond pour boutons actifs/hover */
-  --link: #8fb6ff;         /* Bleu doux, non agressif */
-  --link-hover: #a7c6ff;   /* Hover légèrement plus clair */
+  --pill: #1b2430;
+  --on-pill: #e6edf3;     /* text color on pill in dark mode */
+  --link: #8fb6ff;
+  --link-hover: #a7c6ff;
 }
 
 *{box-sizing:border-box}
@@ -60,9 +59,17 @@ body{
 h1{margin:0; font-size:20px; line-height:1.1}
 
 .searchbar{display:flex; align-items:center; gap:10px; flex:1; justify-content:flex-end}
-.topnav{display:flex; gap:6px; border:1px solid var(--border); padding:4px; border-radius:14px; background: var(--card)}
-.topnav button{border:0; background:transparent; padding:6px 10px; border-radius:10px; cursor:pointer; color:var(--fg)}
-.topnav button.active{background: var(--pill); color: var(--fg)}
+.topnav{
+  display:flex; gap:6px; border:1px solid var(--border); padding:4px;
+  border-radius:14px; background: var(--card)
+}
+.topnav button{
+  border:0; background:transparent; padding:6px 10px; border-radius:10px; cursor:pointer; color:var(--fg)
+}
+.topnav button.active{
+  background: var(--pill);
+  color: var(--on-pill); /* ensure readable in light mode */
+}
 
 .search-wrap{position:relative; flex:1; max-width:540px}
 .search-wrap input{
@@ -103,7 +110,10 @@ h1{margin:0; font-size:20px; line-height:1.1}
   text-align:left; padding:8px 10px; border-radius:10px; border:0; background:transparent; cursor:pointer; color:var(--fg)
 }
 .category-list button:hover{background: var(--soft)}
-.category-list button.active{background: var(--pill); color: var(--on-pill)}
+.category-list button.active{
+  background: var(--pill);
+  color: var(--on-pill); /* ensure readable in light and dark */
+}
 
 .main{padding-bottom: 48px;}
 .page-head h2{margin:.2rem 0 0 0; font-size:24px}
